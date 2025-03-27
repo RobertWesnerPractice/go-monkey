@@ -37,6 +37,14 @@ func (l *Lexer) readChar() {
 	}
 }
 
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
@@ -44,9 +52,21 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = l.createToken(token.Assignment, string(l.ch))
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = l.createToken(token.Equal, string(ch)+string(l.ch))
+		} else {
+			tok = l.createToken(token.Assignment, string(l.ch))
+		}
 	case '+':
 		tok = l.createToken(token.Plus, string(l.ch))
+	case '-':
+		tok = l.createToken(token.Minus, string(l.ch))
+	case '*':
+		tok = l.createToken(token.Multiplication, string(l.ch))
+	case '/':
+		tok = l.createToken(token.Division, string(l.ch))
 	case ',':
 		tok = l.createToken(token.Comma, string(l.ch))
 	case ';':
@@ -59,6 +79,30 @@ func (l *Lexer) NextToken() token.Token {
 		tok = l.createToken(token.BraceLeft, string(l.ch))
 	case '}':
 		tok = l.createToken(token.BraceRight, string(l.ch))
+	case '<':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = l.createToken(token.LessOrEqual, string(ch)+string(l.ch))
+		} else {
+			tok = l.createToken(token.LessThan, string(l.ch))
+		}
+	case '>':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = l.createToken(token.GreaterOrEqual, string(ch)+string(l.ch))
+		} else {
+			tok = l.createToken(token.GreaterThan, string(l.ch))
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = l.createToken(token.NotEqual, string(ch)+string(l.ch))
+		} else {
+			tok = l.createToken(token.Not, string(l.ch))
+		}
 	case 0:
 		tok = l.createToken(token.EOF, "")
 	default:

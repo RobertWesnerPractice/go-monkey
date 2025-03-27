@@ -1,8 +1,13 @@
 package token
 
 var keywords = map[string]Type{
-	"fn":  Function,
-	"let": Declaration,
+	"true":   True,
+	"false":  False,
+	"fn":     Function,
+	"let":    Declaration,
+	"if":     If,
+	"else":   Else,
+	"return": Return,
 }
 
 // LookupIdentifier returns a keyword Type if found, otherwise returns Identifier
