@@ -38,35 +38,85 @@ func (l *Lexer) readChar() {
 }
 
 func (l *Lexer) NextToken() token.Token {
-	defer l.readChar()
+	var tok token.Token
+
+	l.eatWhitespace()
 
 	switch l.ch {
 	case '=':
-		return l.createToken(token.Assignment, l.ch)
+		tok = l.createToken(token.Assignment, string(l.ch))
 	case '+':
-		return l.createToken(token.Plus, l.ch)
+		tok = l.createToken(token.Plus, string(l.ch))
 	case ',':
-		return l.createToken(token.Comma, l.ch)
+		tok = l.createToken(token.Comma, string(l.ch))
 	case ';':
-		return l.createToken(token.Semicolon, l.ch)
+		tok = l.createToken(token.Semicolon, string(l.ch))
 	case '(':
-		return l.createToken(token.ParenthesisLeft, l.ch)
+		tok = l.createToken(token.ParenthesisLeft, string(l.ch))
 	case ')':
-		return l.createToken(token.ParenthesisRight, l.ch)
+		tok = l.createToken(token.ParenthesisRight, string(l.ch))
 	case '{':
-		return l.createToken(token.BraceLeft, l.ch)
+		tok = l.createToken(token.BraceLeft, string(l.ch))
 	case '}':
-		return l.createToken(token.BraceRight, l.ch)
+		tok = l.createToken(token.BraceRight, string(l.ch))
 	case 0:
-		t := l.createToken(token.EOF, l.ch)
-		t.Literal = ""
-
-		return t
+		tok = l.createToken(token.EOF, "")
 	default:
-		return l.createToken(token.Illegal, l.ch)
+		if isLetter(l.ch) {
+			identifier := l.readIdentifier()
+			return l.createToken(token.LookupIdentifier(identifier), identifier)
+		}
+
+		if isDigit(l.ch) {
+			return l.createToken(token.Number, l.readNumber())
+		}
+
+		return l.createToken(token.Illegal, string(l.ch))
+	}
+
+	l.readChar()
+
+	return tok
+}
+
+func (l *Lexer) createToken(tokenType token.Type, literal string) token.Token {
+	return token.New(tokenType, literal, l.line, l.column)
+}
+
+func (l *Lexer) readIdentifier() string {
+	position := l.position
+	for isLetter(l.ch) || isDigit(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) {
+		l.readChar()
+	}
+	// float support
+	if l.ch == '.' {
+		l.readChar()
+		for isDigit(l.ch) {
+			l.readChar()
+		}
+	}
+
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) eatWhitespace() {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		l.readChar()
 	}
 }
 
-func (l *Lexer) createToken(tokenType token.Type, ch byte) token.Token {
-	return token.New(tokenType, string(ch), l.line, l.column)
+func isLetter(ch byte) bool {
+	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
+}
+
+func isDigit(ch byte) bool {
+	return '0' <= ch && ch <= '9'
 }
