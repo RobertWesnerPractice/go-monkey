@@ -30,8 +30,8 @@ const (
 	// keywords
 	True
 	False
-	Function
-	Declaration
+	Fn
+	Let
 	If
 	Else
 	Return
@@ -83,9 +83,9 @@ func (t Type) Debug() string {
 		return "=="
 	case NotEqual:
 		return "!="
-	case Function:
+	case Fn:
 		return "fn"
-	case Declaration:
+	case Let:
 		return "let"
 	case True:
 		return "true"
