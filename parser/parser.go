@@ -5,6 +5,7 @@ import (
 	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
+	"strconv"
 )
 
 type Parser struct {
@@ -12,12 +13,35 @@ type Parser struct {
 	tokenCurrent token.Token
 	tokenPeek    token.Token
 	errors       []string
+
+	prefixParseFns map[token.Type]prefixParseFn
+	infixParseFns  map[token.Type]infixParseFn
 }
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
+const (
+	_ int = iota
+	Lowest
+	Equals
+	LessGreater
+	Sum
+	Product
+	Prefix
+	Call
+)
 
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{l: l, errors: []string{}}
 	p.nextToken()
 	p.nextToken()
+
+	p.prefixParseFns = map[token.Type]prefixParseFn{}
+	p.registerPrefix(token.Identifier, p.parseIdentifier)
+	p.registerPrefix(token.Number, p.parseNumberLiteral)
 
 	return p
 }
@@ -60,7 +84,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.Return:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -98,6 +122,48 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.tokenCurrent}
+
+	stmt.Expression = p.parseExpression(Lowest)
+
+	if p.peekIs(token.Semicolon) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.tokenCurrent.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+
+	return leftExp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.tokenCurrent, Value: p.tokenCurrent.Literal}
+}
+
+func (p *Parser) parseNumberLiteral() ast.Expression {
+	lit := &ast.NumberLiteral{Token: p.tokenCurrent}
+
+	value, err := strconv.ParseFloat(p.tokenCurrent.Literal, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as number", p.tokenCurrent.Literal)
+		p.errors = append(p.errors, msg)
+
+		return nil
+	}
+
+	lit.Value = value
+
+	return lit
+}
+
 func (p *Parser) currentIs(t token.Type) bool {
 	return p.tokenCurrent.Type == t
 }
@@ -116,4 +182,12 @@ func (p *Parser) expectPeek(t token.Type) bool {
 	p.peekError(t)
 
 	return false
+}
+
+func (p *Parser) registerPrefix(tokenType token.Type, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.Type, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
