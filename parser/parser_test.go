@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/lexer"
 	"testing"
@@ -23,7 +24,7 @@ let foobar = 838383;
 	checkParserErrors(t, p)
 
 	if len(program.Statements) != 3 {
-		t.Fatalf("proram.Statements does not contain 3 statements, got=%d", len(program.Statements))
+		t.Fatalf("proram.Statements does not contain 3 statements. got=%d", len(program.Statements))
 	}
 
 	tests := []struct {
@@ -44,26 +45,26 @@ let foobar = 838383;
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 	if s.TokenLiteral() != "let" {
-		t.Errorf("s.TokenLiteral not \"let\", got=%q", s.TokenLiteral())
+		t.Errorf("s.TokenLiteral not \"let\". got=%q", s.TokenLiteral())
 
 		return false
 	}
 
 	letStmt, ok := s.(*ast.LetStatement)
 	if !ok {
-		t.Errorf("s not *ast.LetStatement, got=%T", s)
+		t.Errorf("s not *ast.LetStatement. got=%T", s)
 
 		return false
 	}
 
 	if letStmt.Name.Value != name {
-		t.Errorf("letStmt.Name.Value not %q, got=%q", name, letStmt.Name.Value)
+		t.Errorf("letStmt.Name.Value not %q. got=%q", name, letStmt.Name.Value)
 
 		return false
 	}
 
 	if letStmt.Name.TokenLiteral() != name {
-		t.Errorf("letStmt.Name.TokenLiteral() not %q, got=%q", name, letStmt.Name.TokenLiteral())
+		t.Errorf("letStmt.Name.TokenLiteral() not %q. got=%q", name, letStmt.Name.TokenLiteral())
 
 		return false
 	}
@@ -94,7 +95,7 @@ return 993322;`
 		}
 
 		if returnStmt.TokenLiteral() != "return" {
-			t.Errorf("returnStmt.TokenLiteral not 'return', got %q", returnStmt.TokenLiteral())
+			t.Errorf("returnStmt.TokenLiteral not 'return'. got %q", returnStmt.TokenLiteral())
 		}
 	}
 }
@@ -149,11 +150,72 @@ func TestNumberLiteralExpression(t *testing.T) {
 		t.Fatalf("exp not *ast.NumberLiteral. got=%T", stmt.Expression)
 	}
 	if literal.Value != 5 {
-		t.Errorf("literal.Value not %v, got=%v", 5, literal.Value)
+		t.Errorf("literal.Value not %v. got=%v", 5, literal.Value)
 	}
 	if literal.TokenLiteral() != "5.0" {
 		t.Errorf("literal.TOkenLiteral not %v. got=%v", "5.0", literal.TokenLiteral())
 	}
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	prefixTests := []struct {
+		input       string
+		operator    string
+		numberValue float64
+	}{
+		{"!5;", "!", 5},
+		{"-13.37;", "-", 13.37},
+	}
+
+	for _, tt := range prefixTests {
+		l := lexer.New(tt.input)
+		p := New(l)
+		program := p.Parse()
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain %v statements. got=%v", 1, len(program.Statements))
+		}
+
+		stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("program.Statements[0] is not an ast.ExpressionStatement. got=%T", program.Statements[0])
+		}
+
+		exp, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("stmt is not ast.PrefixExpression. got=%T", stmt.Expression)
+		}
+		if exp.Operator != tt.operator {
+			t.Fatalf("exp.Operator is not %q. got=%q", tt.operator, exp.Operator)
+		}
+		if !testNumberLiteral(t, exp.Right, tt.numberValue) {
+			return
+		}
+	}
+}
+
+func testNumberLiteral(t *testing.T, nl ast.Expression, value float64) bool {
+	number, ok := nl.(*ast.NumberLiteral)
+	if !ok {
+		t.Errorf("nl not *ast.NumberLiteral. got=%T", nl)
+
+		return false
+	}
+
+	if number.Value != value {
+		t.Errorf("number.Value not %v. got=%v", value, number.Value)
+
+		return false
+	}
+
+	if number.TokenLiteral() != fmt.Sprint(value) {
+		t.Errorf("number.TokenLiteral not %v. got=%v", value, number.Value)
+
+		return false
+	}
+
+	return true
 }
 
 func checkParserErrors(t *testing.T, p *Parser) {

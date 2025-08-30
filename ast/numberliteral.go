@@ -7,10 +7,10 @@ type NumberLiteral struct {
 	Value float64
 }
 
-func (il *NumberLiteral) expressionNode() {}
-func (il *NumberLiteral) TokenLiteral() string {
-	return il.Token.Literal
+func (nl *NumberLiteral) expressionNode() {}
+func (nl *NumberLiteral) TokenLiteral() string {
+	return nl.Token.Literal
 }
-func (il *NumberLiteral) String() string {
-	return il.Token.Literal
+func (nl *NumberLiteral) String() string {
+	return nl.Token.Literal
 }
