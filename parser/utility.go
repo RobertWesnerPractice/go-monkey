@@ -49,3 +49,19 @@ func (p *Parser) noPrefixParseFnError(t token.Type) {
 	msg := fmt.Sprintf("no prefix parse function for %v found", t.Debug())
 	p.errors = append(p.errors, msg)
 }
+
+func (p *Parser) currentPrecedence() int {
+	if p, ok := precedences[p.tokenCurrent.Type]; ok {
+		return p
+	}
+
+	return Lowest
+}
+
+func (p *Parser) peekPrecedence() int {
+	if p, ok := precedences[p.tokenPeek.Type]; ok {
+		return p
+	}
+
+	return Lowest
+}
