@@ -54,6 +54,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.Minus, p.parsePrefixExpression)
 	p.registerPrefix(token.True, p.parseBooleanExpression)
 	p.registerPrefix(token.False, p.parseBooleanExpression)
+	p.registerPrefix(token.ParenthesisLeft, p.parseGroupedExpression)
 
 	p.infixParseFns = map[token.Type]infixParseFn{}
 	p.registerInfix(token.Plus, p.parseInfixExpression)

@@ -137,3 +137,15 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseBooleanExpression() ast.Expression {
 	return &ast.BooleanExpression{Token: p.tokenCurrent, Value: p.currentIs(token.True)}
 }
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	exp := p.parseExpression(Lowest)
+
+	if !p.expectPeek(token.ParenthesisRight) {
+		return nil
+	}
+
+	return exp
+}
