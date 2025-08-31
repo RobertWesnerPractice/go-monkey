@@ -133,3 +133,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 
 	return expression
 }
+
+func (p *Parser) parseBooleanExpression() ast.Expression {
+	return &ast.BooleanExpression{Token: p.tokenCurrent, Value: p.currentIs(token.True)}
+}

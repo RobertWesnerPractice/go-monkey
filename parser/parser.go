@@ -52,6 +52,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.Number, p.parseNumberLiteral)
 	p.registerPrefix(token.Not, p.parsePrefixExpression)
 	p.registerPrefix(token.Minus, p.parsePrefixExpression)
+	p.registerPrefix(token.True, p.parseBooleanExpression)
+	p.registerPrefix(token.False, p.parseBooleanExpression)
 
 	p.infixParseFns = map[token.Type]infixParseFn{}
 	p.registerInfix(token.Plus, p.parseInfixExpression)
@@ -60,8 +62,10 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.Division, p.parseInfixExpression)
 	p.registerInfix(token.Equal, p.parseInfixExpression)
 	p.registerInfix(token.NotEqual, p.parseInfixExpression)
-	p.registerInfix(token.LessThan, p.parseInfixExpression)
 	p.registerInfix(token.GreaterThan, p.parseInfixExpression)
+	p.registerInfix(token.GreaterOrEqual, p.parseInfixExpression)
+	p.registerInfix(token.LessThan, p.parseInfixExpression)
+	p.registerInfix(token.LessOrEqual, p.parseInfixExpression)
 
 	return p
 }
